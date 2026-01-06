@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pdf-zip-sa
+  namespace: pdf
+  annotations:
+    eks.amazonaws.com/role-arn: REPLACE_ZIP_IRSA_ROLE_ARN
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-zip-worker
+  namespace: pdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: pdf-zip-worker }
+  template:
+    metadata:
+      labels: { app: pdf-zip-worker }
+    spec:
+      serviceAccountName: pdf-zip-sa
+      containers:
+        - name: zip-worker
+          image: REPLACE_ECR_ZIP_IMAGE:latest
+          env:
+            - { name: AWS_REGION, value: ap-south-1 }
+            - { name: ZIP_QUEUE_URL, value: REPLACE_ZIP_QUEUE_URL }
+            - { name: OUTPUT_BUCKET, value: REPLACE_OUTPUT_BUCKET }
+            - { name: JOBS_TABLE, value: PdfJobs }
+            - { name: ITEMS_TABLE, value: PdfJobItems }
+            - { name: SNS_TOPIC_ARN, value: REPLACE_SNS_TOPIC_ARN }
+            - { name: VISIBILITY_TIMEOUT_SEC, value: "300" }
+            - { name: HEARTBEAT_EVERY_SEC, value: "60" }
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits: { cpu: "1000m", memory: "2Gi" }

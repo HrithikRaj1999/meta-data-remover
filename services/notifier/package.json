@@ -1,0 +1,13 @@
+{
+  "name": "meta-data-remover",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/notifier.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.600.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

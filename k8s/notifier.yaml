@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pdf-notifier-sa
+  namespace: pdf
+  annotations:
+    eks.amazonaws.com/role-arn: REPLACE_NOTIFIER_IRSA_ROLE_ARN
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-notifier
+  namespace: pdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: pdf-notifier }
+  template:
+    metadata:
+      labels: { app: pdf-notifier }
+    spec:
+      serviceAccountName: pdf-notifier-sa
+      containers:
+        - name: notifier
+          image: REPLACE_ECR_NOTIFIER_IMAGE:latest
+          ports: [{ containerPort: 4010 }]
+          env:
+            - { name: AWS_REGION, value: ap-south-1 }
+            - { name: NOTIFY_QUEUE_URL, value: REPLACE_NOTIFY_QUEUE_URL }
+            - { name: FRONTEND_URLS, value: http://localhost:5173,https://your-frontend.com }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-notifier-svc
+  namespace: pdf
+spec:
+  selector: { app: pdf-notifier }
+  ports:
+    - port: 80
+      targetPort: 4010
+  type: ClusterIP

@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pdf-worker-sqs
+  namespace: pdf
+spec:
+  scaleTargetRef:
+    name: pdf-worker
+  minReplicaCount: 1
+  maxReplicaCount: 50
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: REPLACE_WORK_QUEUE_URL
+        queueLength: "10"
+        awsRegion: ap-south-1

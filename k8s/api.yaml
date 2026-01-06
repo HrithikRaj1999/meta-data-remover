@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pdf-api-sa
+  namespace: pdf
+  annotations:
+    eks.amazonaws.com/role-arn: REPLACE_API_IRSA_ROLE_ARN
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-api
+  namespace: pdf
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: pdf-api }
+  template:
+    metadata:
+      labels: { app: pdf-api }
+    spec:
+      serviceAccountName: pdf-api-sa
+      containers:
+        - name: api
+          image: REPLACE_ECR_API_IMAGE:latest
+          ports: [{ containerPort: 4000 }]
+          env:
+            - { name: AWS_REGION, value: ap-south-1 }
+            - { name: INPUT_BUCKET, value: REPLACE_INPUT_BUCKET }
+            - { name: OUTPUT_BUCKET, value: REPLACE_OUTPUT_BUCKET }
+            - { name: WORK_QUEUE_URL, value: REPLACE_WORK_QUEUE_URL }
+            - { name: ZIP_QUEUE_URL, value: REPLACE_ZIP_QUEUE_URL }
+            - { name: JOBS_TABLE, value: PdfJobs }
+            - { name: ITEMS_TABLE, value: PdfJobItems }
+            - {
+                name: FRONTEND_URLS,
+                value: http://localhost:5173,
+                https://your-frontend.com,
+              }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-api-svc
+  namespace: pdf
+spec:
+  selector: { app: pdf-api }
+  ports:
+    - port: 80
+      targetPort: 4000
+  type: ClusterIP
